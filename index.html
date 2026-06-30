@@ -179,8 +179,47 @@
   .mic{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--bg3);color:var(--ink);font-size:17px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;transition:.15s;}
   .mic.rec{background:linear-gradient(180deg,#c95a4b,#9c3a2f);border-color:#c95a4b;animation:pulse 1.2s infinite;}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(201,90,75,0.5);}50%{box-shadow:0 0 0 10px rgba(201,90,75,0);}}
-  .send{width:42px;height:42px;border-radius:13px;border:0;background:linear-gradient(180deg,var(--gold),var(--gold2));color:#1a130a;font-size:17px;font-weight:700;cursor:pointer;flex:none;}
+  .send{height:42px;min-width:42px;padding:0 14px;border-radius:13px;border:0;background:linear-gradient(180deg,var(--gold),var(--gold2));color:#1a130a;font-size:13px;font-weight:700;cursor:pointer;flex:none;display:flex;align-items:center;gap:6px;justify-content:center;font-family:var(--body);letter-spacing:.01em;white-space:nowrap;}
+  .send .ar{font-size:15px;}
+  .send.nokey{background:var(--bg3);color:var(--gold);border:1px solid var(--line2);}
   .send:disabled{opacity:.4;cursor:default;}
+
+  /* Onboarding card (above camera) */
+  .onboard{
+    margin:11px 14px 0;border:1px solid var(--line2);border-radius:14px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(22,22,26,0.96),rgba(17,17,20,0.96));position:relative;
+  }
+  .onboard.hidden{display:none;}
+  .onboard .ob-top{display:flex;align-items:center;gap:9px;padding:12px 14px 0;}
+  .onboard .ob-top .t{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.04em;color:var(--gold);flex:1;}
+  .onboard .ob-x{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--muted);font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;}
+  .onboard .steps{display:flex;gap:8px;padding:11px 14px 4px;}
+  .onboard .step{flex:1;text-align:center;}
+  .onboard .step .n{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--gold2);}
+  .onboard .step .l{font-size:12px;color:var(--ink);margin-top:3px;font-weight:500;}
+  .onboard .step .d{font-size:10.5px;color:var(--muted);line-height:1.4;margin-top:2px;}
+  .onboard .arrow{color:var(--muted2);align-self:center;font-size:12px;}
+  .onboard .money{display:flex;gap:0;border-top:1px solid var(--line);margin-top:8px;font-size:11px;}
+  .onboard .money div{flex:1;padding:9px 12px;line-height:1.45;}
+  .onboard .money .free{color:var(--ok);border-right:1px solid var(--line);}
+  .onboard .money b{font-family:var(--mono);font-size:9px;letter-spacing:.14em;display:block;text-transform:uppercase;margin-bottom:2px;}
+  .onboard .money .paid{color:var(--gold);}
+  .onboard .money .paid b{color:var(--gold2);}
+
+  /* legend under tools */
+  .legend{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--muted2);padding:0 2px 8px;display:flex;align-items:center;gap:6px;}
+  .legend .g{color:var(--ok);}
+  .legend .k{color:var(--gold2);}
+
+  /* one-time camera hint overlay */
+  .camhint{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);z-index:6;display:none;
+    background:rgba(10,10,12,0.82);border:1px solid var(--line2);border-radius:14px;padding:16px 18px;backdrop-filter:blur(6px);
+    text-align:center;max-width:80%;animation:rise .3s ease;}
+  .camhint.on{display:block;}
+  .camhint .row{display:flex;gap:14px;justify-content:center;margin-bottom:10px;}
+  .camhint .row span{font-family:var(--mono);font-size:11px;color:var(--ink);}
+  .camhint .row b{color:var(--gold);}
+  .camhint .ok{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--gold2);cursor:pointer;border:1px solid var(--line2);border-radius:8px;padding:6px 14px;display:inline-block;}
 
   /* Drawer / sheets */
   .scrim{position:fixed;inset:0;background:rgba(4,4,6,0.66);z-index:30;opacity:0;pointer-events:none;transition:.2s;backdrop-filter:blur(3px);}
@@ -233,6 +272,24 @@
 
   <div class="modes" id="modes"></div>
 
+  <div class="onboard" id="onboard">
+    <div class="ob-top">
+      <div class="t">How OmniLens works</div>
+      <div class="ob-x" id="obClose" title="Dismiss">✕</div>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><div class="l">Point</div><div class="d">Turn the camera on</div></div>
+      <div class="arrow">›</div>
+      <div class="step"><div class="n">02</div><div class="l">Ask</div><div class="d">Type or hold the mic</div></div>
+      <div class="arrow">›</div>
+      <div class="step"><div class="n">03</div><div class="l">Send</div><div class="d">The frame goes with it</div></div>
+    </div>
+    <div class="money">
+      <div class="free"><b>Free · no key</b>Camera, voice, capturing a frame, documents, video frames, memory.</div>
+      <div class="paid"><b>Uses your key</b>Every answer — vision, Fix it, Translate, web search. One call each.</div>
+    </div>
+  </div>
+
   <div class="stage">
     <div class="viewer">
       <video id="cam" autoplay playsinline muted></video>
@@ -253,18 +310,24 @@
         <span>FRAME ATTACHED</span>
         <span style="cursor:pointer;color:var(--muted);" id="clearSnap">✕</span>
       </div>
+      <div class="camhint" id="camhint">
+        <div class="row"><span><b>1</b> Point</span><span><b>2</b> Ask</span><span><b>3</b> Send</span></div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:10px;">The frame you see is sent with your question automatically.</div>
+        <span class="ok" id="camhintOk">Got it</span>
+      </div>
     </div>
     <div class="feed" id="feed"></div>
   </div>
 
   <div class="composer">
     <div class="toolrow" id="toolrow"></div>
+    <div class="legend"><span class="g">●</span> Capture &amp; voice are free <span class="k" style="margin-left:4px;">●</span> answers use your key</div>
     <div class="inputbar">
       <div class="inputwrap">
         <textarea id="q" rows="1" placeholder="Ask about what you see…"></textarea>
       </div>
       <button class="mic" id="micBtn" title="Voice">🎤</button>
-      <button class="send" id="sendBtn" title="Send">➤</button>
+      <button class="send" id="sendBtn" title="Send"><span class="lbl">Ask Claude</span><span class="ar">➤</span></button>
     </div>
   </div>
 </div>
@@ -494,7 +557,7 @@ async function startCamera(){
     el('camoff').style.display='none';
     el('flipCam').style.display='flex'; el('stopCam').style.display='flex';
     el('startCam') && (el('startCam').textContent='Enable camera');
-    camOn=true;
+    camOn=true; showCamHint();
   }catch(e){ toast('Camera blocked. Allow access in your browser, over HTTPS.'); }
 }
 function stopCamera(){
@@ -864,16 +927,29 @@ el('apiKey').value=S.key; el('model').value=S.model; el('ttsMode').value=S.tts; 
 el('saveSet').onclick=function(){
   S.key=el('apiKey').value.trim(); S.model=el('model').value; S.tts=el('ttsMode').value; S.lang=el('lang').value; S.autoMem=el('autoMem').value;
   store.set('ol_key',S.key); store.set('ol_model',S.model); store.set('ol_tts',S.tts); store.set('ol_lang',S.lang); store.set('ol_automem',S.autoMem);
-  updateUsage(); closeSheets(); toast('Settings saved.');
+  updateUsage(); refreshSend(); closeSheets(); toast('Settings saved.');
 };
-el('clearChat').onclick=function(){ S.history=[]; feed.innerHTML=''; greet(); closeSheets(); toast('Conversation cleared.'); };
+el('clearChat').onclick=function(){ S.history=[]; feed.innerHTML=''; closeSheets(); toast('Conversation cleared.'); };
 updateUsage();
 
-/* ---------- greeting ---------- */
-function greet(){
-  addBubble('sys','Point the lens at anything and ask. Pick a mode above. Voice and camera are free — answers use your Claude key.');
+/* ---------- send button label reflects free-vs-key ---------- */
+function refreshSend(){
+  var btn=el('sendBtn'), lbl=btn.querySelector('.lbl');
+  if(S.key){ lbl.textContent='Ask Claude'; btn.classList.remove('nokey'); btn.title='Send — uses your key'; }
+  else { lbl.textContent='Add key'; btn.classList.add('nokey'); btn.title='Add your API key to ask'; }
 }
-greet();
+refreshSend();
+
+/* ---------- onboarding card (dismissible, once) ---------- */
+if(store.get('ol_onboard')==='done'){ el('onboard').classList.add('hidden'); }
+el('obClose').onclick=function(){ el('onboard').classList.add('hidden'); store.set('ol_onboard','done'); };
+
+/* ---------- one-time camera hint ---------- */
+function showCamHint(){
+  if(store.get('ol_camhint')==='done') return;
+  el('camhint').classList.add('on');
+}
+el('camhintOk').onclick=function(){ el('camhint').classList.remove('on'); store.set('ol_camhint','done'); };
 
 /* ---------- PWA: manifest + service worker + icon (canvas) ---------- */
 function makeIcon(size){
