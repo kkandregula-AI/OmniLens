@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0a0a0c" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="OmniLens" />
+<title>OmniLens AI — Point. Ask. Understand. Create.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0a0a0c;
+    --bg2:#111114;
+    --bg3:#16161a;
+    --gold:#E3C492;
+    --gold2:#C9A24B;
+    --ink:#ECEAE4;
+    --muted:#8a877f;
+    --muted2:#5e5c56;
+    --line:rgba(227,196,146,0.16);
+    --line2:rgba(227,196,146,0.30);
+    --danger:#d98a6a;
+    --ok:#9bbf8f;
+    --display:'Cinzel',serif;
+    --body:'DM Sans',system-ui,sans-serif;
+    --mono:'DM Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--body);
+    overflow:hidden;
+    position:fixed;
+    inset:0;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:radial-gradient(rgba(227,196,146,0.05) 1px, transparent 1px);
+    background-size:22px 22px;opacity:.5;
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(120% 80% at 50% -10%, rgba(227,196,146,0.10), transparent 60%);
+  }
+  .app{position:relative;z-index:1;display:flex;flex-direction:column;height:100%;}
+
+  /* Top bar */
+  .topbar{
+    display:flex;align-items:center;gap:10px;
+    padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(10,10,12,0.92), rgba(10,10,12,0.55));
+    backdrop-filter:blur(8px);
+  }
+  .brand{display:flex;align-items:center;gap:9px;min-width:0;}
+  .brand .mark{
+    width:30px;height:30px;border-radius:8px;flex:none;position:relative;
+    background:radial-gradient(circle at 50% 38%, var(--gold), var(--gold2) 60%, #6e5526 100%);
+    box-shadow:0 0 0 1px var(--line2), 0 0 18px rgba(227,196,146,0.35);
+  }
+  .brand .mark::after{
+    content:"";position:absolute;inset:9px;border-radius:50%;
+    background:var(--bg);box-shadow:inset 0 0 0 2px var(--gold2);
+  }
+  .brand .name{font-family:var(--display);font-weight:600;font-size:16px;letter-spacing:.06em;line-height:1;}
+  .brand .name b{color:var(--gold);font-weight:700;}
+  .brand .sub{font-family:var(--mono);font-size:8.5px;letter-spacing:.34em;color:var(--muted);text-transform:uppercase;margin-top:3px;}
+  .topbar .spacer{flex:1;}
+  .iconbtn{
+    width:38px;height:38px;border-radius:9px;border:1px solid var(--line);
+    background:var(--bg2);color:var(--ink);font-size:16px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex:none;transition:.15s;
+  }
+  .iconbtn:hover{border-color:var(--line2);}
+  .iconbtn.live{border-color:var(--gold2);box-shadow:0 0 14px rgba(227,196,146,0.3);}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--muted2);box-shadow:0 0 0 0 rgba(155,191,143,0);}
+  .dot.on{background:var(--ok);box-shadow:0 0 10px rgba(155,191,143,0.7);}
+
+  /* Mode strip */
+  .modes{
+    display:flex;gap:7px;overflow-x:auto;padding:9px 14px;border-bottom:1px solid var(--line);
+    scrollbar-width:none;background:rgba(17,17,20,0.5);
+  }
+  .modes::-webkit-scrollbar{display:none;}
+  .mode{
+    flex:none;padding:7px 13px;border-radius:999px;border:1px solid var(--line);
+    background:var(--bg2);color:var(--muted);font-family:var(--mono);font-size:11px;
+    letter-spacing:.04em;cursor:pointer;white-space:nowrap;transition:.15s;
+  }
+  .mode.active{color:var(--bg);background:linear-gradient(180deg,var(--gold),var(--gold2));border-color:var(--gold);font-weight:500;}
+
+  /* Stage / camera */
+  .stage{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column;}
+  .viewer{position:relative;flex:1;background:#000;overflow:hidden;}
+  #cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;}
+  #cam.mirror{transform:scaleX(-1);}
+  .camoff{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;color:var(--muted);text-align:center;padding:24px;
+  }
+  .camoff .ring{
+    width:96px;height:96px;border-radius:50%;border:1px solid var(--line2);
+    display:flex;align-items:center;justify-content:center;font-size:34px;position:relative;
+    background:radial-gradient(circle at 50% 40%, rgba(227,196,146,0.10), transparent 70%);
+  }
+  .camoff .ring span{filter:grayscale(.2);}
+  .camoff h2{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:.04em;color:var(--ink);margin:0;}
+  .camoff p{margin:0;max-width:300px;font-size:13px;line-height:1.6;}
+  .corner{position:absolute;width:18px;height:18px;border:1px solid var(--gold2);opacity:.55;pointer-events:none;z-index:3;}
+  .corner.tl{top:12px;left:12px;border-right:0;border-bottom:0;}
+  .corner.tr{top:12px;right:12px;border-left:0;border-bottom:0;}
+  .corner.bl{bottom:12px;left:12px;border-right:0;border-top:0;}
+  .corner.br{bottom:12px;right:12px;border-left:0;border-top:0;}
+  .camctl{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:9px;z-index:4;}
+  .snaptag{
+    position:absolute;left:14px;bottom:14px;z-index:4;display:none;align-items:center;gap:7px;
+    padding:6px 11px;border-radius:999px;background:rgba(10,10,12,0.78);border:1px solid var(--line2);
+    font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--gold);backdrop-filter:blur(6px);
+  }
+  .snaptag.on{display:flex;}
+  .snapthumb{width:26px;height:26px;border-radius:5px;object-fit:cover;border:1px solid var(--line2);}
+
+  /* Transcript */
+  .feed{
+    position:absolute;inset:0;top:auto;max-height:62%;overflow-y:auto;z-index:2;
+    padding:16px 14px 8px;display:flex;flex-direction:column;gap:12px;
+    background:linear-gradient(180deg, transparent, rgba(10,10,12,0.78) 22%, rgba(10,10,12,0.96));
+    -webkit-overflow-scrolling:touch;
+  }
+  .feed.expanded{max-height:100%;background:rgba(10,10,12,0.97);}
+  .bubble{max-width:90%;padding:11px 14px;border-radius:14px;font-size:14px;line-height:1.62;animation:rise .25s ease;}
+  @keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .bubble.user{align-self:flex-end;background:linear-gradient(180deg,rgba(227,196,146,0.16),rgba(201,162,75,0.10));border:1px solid var(--line2);}
+  .bubble.ai{align-self:flex-start;background:var(--bg2);border:1px solid var(--line);}
+  .bubble.sys{align-self:center;background:transparent;border:1px dashed var(--line);color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.03em;max-width:96%;text-align:center;}
+  .bubble .who{font-family:var(--mono);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+  .bubble.ai .who{color:var(--gold2);}
+  .bubble .who .play{cursor:pointer;color:var(--muted);font-size:11px;}
+  .bubble .who .play:hover{color:var(--gold);}
+  .bubble img.att{max-width:130px;border-radius:8px;border:1px solid var(--line2);margin-bottom:8px;display:block;}
+  .bubble pre{background:#0c0c0f;border:1px solid var(--line);border-radius:9px;padding:11px;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.55;margin:8px 0;position:relative;}
+  .bubble code{font-family:var(--mono);font-size:12.5px;background:rgba(227,196,146,0.10);padding:1px 5px;border-radius:4px;}
+  .bubble pre code{background:none;padding:0;}
+  .bubble pre .copy{position:absolute;top:6px;right:6px;font-size:9px;font-family:var(--mono);letter-spacing:.1em;color:var(--muted);cursor:pointer;border:1px solid var(--line);border-radius:5px;padding:2px 6px;background:var(--bg);}
+  .bubble .src{display:inline-block;font-family:var(--mono);font-size:10px;color:var(--gold2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;margin:2px 4px 0 0;text-decoration:none;}
+  .typing{display:flex;gap:5px;align-items:center;}
+  .typing i{width:6px;height:6px;border-radius:50%;background:var(--gold2);animation:bl 1s infinite;}
+  .typing i:nth-child(2){animation-delay:.16s;}.typing i:nth-child(3){animation-delay:.32s;}
+  @keyframes bl{0%,100%{opacity:.25;transform:translateY(0);}50%{opacity:1;transform:translateY(-3px);}}
+  canvas.chart{width:100%;max-width:420px;border:1px solid var(--line);border-radius:10px;background:#0c0c0f;margin-top:8px;}
+
+  /* Tools row + composer */
+  .composer{border-top:1px solid var(--line);background:linear-gradient(0deg, rgba(10,10,12,0.96), rgba(10,10,12,0.7));backdrop-filter:blur(8px);padding:9px 12px calc(env(safe-area-inset-bottom) + 10px);}
+  .toolrow{display:flex;gap:7px;overflow-x:auto;padding-bottom:9px;scrollbar-width:none;}
+  .toolrow::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:none;display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;
+    border:1px solid var(--line);background:var(--bg2);color:var(--muted);font-family:var(--mono);
+    font-size:10.5px;letter-spacing:.03em;cursor:pointer;transition:.15s;white-space:nowrap;
+  }
+  .chip.on{color:var(--bg);background:linear-gradient(180deg,var(--gold),var(--gold2));border-color:var(--gold);}
+  .chip .x{font-size:12px;}
+  .inputbar{display:flex;align-items:flex-end;gap:8px;}
+  .inputwrap{flex:1;display:flex;align-items:flex-end;border:1px solid var(--line);border-radius:16px;background:var(--bg2);padding:4px 4px 4px 14px;}
+  .inputwrap:focus-within{border-color:var(--line2);}
+  textarea#q{
+    flex:1;background:none;border:0;outline:0;color:var(--ink);font-family:var(--body);font-size:15px;
+    resize:none;max-height:120px;line-height:1.45;padding:9px 0;
+  }
+  textarea#q::placeholder{color:var(--muted2);}
+  .mic{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--bg3);color:var(--ink);font-size:17px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;transition:.15s;}
+  .mic.rec{background:linear-gradient(180deg,#c95a4b,#9c3a2f);border-color:#c95a4b;animation:pulse 1.2s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(201,90,75,0.5);}50%{box-shadow:0 0 0 10px rgba(201,90,75,0);}}
+  .send{width:42px;height:42px;border-radius:13px;border:0;background:linear-gradient(180deg,var(--gold),var(--gold2));color:#1a130a;font-size:17px;font-weight:700;cursor:pointer;flex:none;}
+  .send:disabled{opacity:.4;cursor:default;}
+
+  /* Drawer / sheets */
+  .scrim{position:fixed;inset:0;background:rgba(4,4,6,0.66);z-index:30;opacity:0;pointer-events:none;transition:.2s;backdrop-filter:blur(3px);}
+  .scrim.on{opacity:1;pointer-events:auto;}
+  .sheet{
+    position:fixed;z-index:31;right:0;top:0;height:100%;width:min(420px,90vw);background:var(--bg2);
+    border-left:1px solid var(--line2);transform:translateX(100%);transition:.25s cubic-bezier(.2,.8,.2,1);
+    display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);
+  }
+  .sheet.on{transform:none;}
+  .sheet h3{font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:.05em;margin:0;padding:18px 18px 6px;display:flex;align-items:center;gap:9px;}
+  .sheet h3 .k{flex:1;}
+  .sheet .body{overflow-y:auto;padding:8px 18px 26px;flex:1;}
+  .field{margin:14px 0;}
+  .field label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+  .field input,.field select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 12px;outline:none;}
+  .field input:focus,.field select:focus{border-color:var(--line2);}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:7px;}
+  .hint a{color:var(--gold2);}
+  .btn{display:block;width:100%;text-align:center;padding:12px;border-radius:11px;border:1px solid var(--line2);background:var(--bg3);color:var(--ink);font-family:var(--mono);font-size:12px;letter-spacing:.06em;cursor:pointer;margin-top:10px;}
+  .btn.gold{background:linear-gradient(180deg,var(--gold),var(--gold2));color:#1a130a;border:0;font-weight:600;}
+  .btn.ghost{background:none;}
+  .memitem{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:13px;line-height:1.5;display:flex;gap:10px;align-items:flex-start;}
+  .memitem .del{margin-left:auto;color:var(--muted);cursor:pointer;font-size:13px;flex:none;}
+  .stat{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted);padding:6px 0;border-bottom:1px solid var(--line);}
+  .stat b{color:var(--gold);font-weight:500;}
+  .about p{font-size:12.5px;line-height:1.7;color:var(--muted);}
+  .about b{color:var(--ink);font-weight:600;}
+  .pill{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:999px;border:1px solid var(--line2);color:var(--gold2);margin:2px 4px 2px 0;}
+  .foot{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--muted2);text-align:center;padding:14px 18px calc(env(safe-area-inset-bottom) + 12px);border-top:1px solid var(--line);line-height:1.8;}
+  .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 96px);transform:translateX(-50%) translateY(20px);z-index:40;background:var(--bg3);border:1px solid var(--line2);color:var(--ink);font-size:12.5px;padding:10px 16px;border-radius:11px;opacity:0;transition:.2s;pointer-events:none;max-width:88vw;text-align:center;}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark"></div>
+      <div>
+        <div class="name">Omni<b>Lens</b></div>
+        <div class="sub">Point · Ask · Understand · Create</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="memBtn" title="Memory">🧠</button>
+    <button class="iconbtn" id="setBtn" title="Settings">⚙️</button>
+  </div>
+
+  <div class="modes" id="modes"></div>
+
+  <div class="stage">
+    <div class="viewer">
+      <video id="cam" autoplay playsinline muted></video>
+      <div class="camoff" id="camoff">
+        <div class="ring"><span>👁</span></div>
+        <h2>Point your lens</h2>
+        <p>Turn on the camera, then ask about anything in view — or just talk. Tap the eye to begin.</p>
+        <button class="btn gold" id="startCam" style="width:auto;padding:11px 22px;">Enable camera</button>
+      </div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="camctl">
+        <button class="iconbtn" id="flipCam" title="Flip camera" style="display:none;">🔄</button>
+        <button class="iconbtn" id="stopCam" title="Camera off" style="display:none;">⏹</button>
+      </div>
+      <div class="snaptag" id="snaptag">
+        <img class="snapthumb" id="snapthumb" alt="" />
+        <span>FRAME ATTACHED</span>
+        <span style="cursor:pointer;color:var(--muted);" id="clearSnap">✕</span>
+      </div>
+    </div>
+    <div class="feed" id="feed"></div>
+  </div>
+
+  <div class="composer">
+    <div class="toolrow" id="toolrow"></div>
+    <div class="inputbar">
+      <div class="inputwrap">
+        <textarea id="q" rows="1" placeholder="Ask about what you see…"></textarea>
+      </div>
+      <button class="mic" id="micBtn" title="Voice">🎤</button>
+      <button class="send" id="sendBtn" title="Send">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings sheet -->
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="setSheet">
+  <h3><span class="k">Settings</span><button class="iconbtn" data-close>✕</button></h3>
+  <div class="body">
+    <div class="field">
+      <label>Anthropic API key · BYOK</label>
+      <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off" />
+      <div class="hint">Stored only on this device. The free layer (camera, voice, capture, notes) works without a key. Get one at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.</div>
+    </div>
+    <div class="field">
+      <label>Model</label>
+      <select id="model">
+        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — fast & economical</option>
+        <option value="claude-sonnet-4-6">Claude Sonnet 4.6 — balanced</option>
+        <option value="claude-opus-4-8">Claude Opus 4.8 — most capable</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Spoken replies</label>
+      <select id="ttsMode">
+        <option value="on">On — read answers aloud</option>
+        <option value="off">Off</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Voice / translation language</label>
+      <select id="lang">
+        <option value="en-IN">English (India)</option>
+        <option value="en-US">English (US)</option>
+        <option value="hi-IN">हिन्दी — Hindi</option>
+        <option value="te-IN">తెలుగు — Telugu</option>
+        <option value="ta-IN">தமிழ் — Tamil</option>
+        <option value="kn-IN">ಕನ್ನಡ — Kannada</option>
+        <option value="bn-IN">বাংলা — Bengali</option>
+        <option value="mr-IN">मराठी — Marathi</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Auto-memory</label>
+      <select id="autoMem">
+        <option value="off">Off — save facts manually (saves tokens)</option>
+        <option value="on">On — let OmniLens extract durable facts</option>
+      </select>
+    </div>
+    <button class="btn gold" id="saveSet">Save</button>
+    <button class="btn ghost" id="installBtn">Install as app</button>
+
+    <h3 style="padding-left:0;margin-top:22px;"><span class="k">Session</span></h3>
+    <div class="stat"><span>Requests</span><b id="sReq">0</b></div>
+    <div class="stat"><span>Input tokens</span><b id="sIn">0</b></div>
+    <div class="stat"><span>Output tokens</span><b id="sOut">0</b></div>
+    <div class="stat"><span>Est. cost (USD)</span><b id="sCost">$0.0000</b></div>
+    <button class="btn ghost" id="clearChat">Clear conversation</button>
+
+    <div class="about" style="margin-top:22px;">
+      <h3 style="padding-left:0;"><span class="k">Honest constraints</span></h3>
+      <p><b>Vision, voice, documents, web search, charts, code, translation, teaching</b> run live on the Claude API in this single file.</p>
+      <p><b>Image generation</b> — the Anthropic API understands images but does not render them. OmniLens crafts a production-ready generation prompt you can take to an image model. It does not draw the picture itself.</p>
+      <p><b>Video</b> — handled as frame sampling: a few stills are pulled from your clip and analysed as images. There is no native audio-track analysis.</p>
+      <p><b>Speech-to-text</b> relies on the browser's recognition engine. On iOS Safari this is limited; text input is always available as a fallback.</p>
+      <p style="margin-top:14px;">
+        <span class="pill">Single-file PWA</span><span class="pill">BYOK</span><span class="pill">On-device memory</span><span class="pill">iOS-aware</span>
+      </p>
+    </div>
+  </div>
+  <div class="foot">Designed &amp; Architected by Krishnamurthy Kandregula · Made by Claude</div>
+</div>
+
+<!-- Memory sheet -->
+<div class="sheet" id="memSheet">
+  <h3><span class="k">Memory</span><button class="iconbtn" data-close>✕</button></h3>
+  <div class="body">
+    <div class="hint">What OmniLens remembers about you across sessions. Facts here are added to every request so answers stay personal. Stored on this device only.</div>
+    <div class="field" style="margin-top:14px;">
+      <input type="text" id="memInput" placeholder="Add a fact to remember…" />
+      <button class="btn" id="addMem" style="margin-top:8px;">Remember this</button>
+    </div>
+    <div id="memList"></div>
+  </div>
+  <div class="foot">Designed &amp; Architected by Krishnamurthy Kandregula · Made by Claude</div>
+</div>
+
+<input type="file" id="docInput" accept="application/pdf,image/*" style="display:none" />
+<input type="file" id="vidInput" accept="video/*" style="display:none" />
+<canvas id="work" style="display:none"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- roundRect polyfill (iOS Safari < 15.4) ---------- */
+if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+    if (typeof r === 'number') r = {tl:r,tr:r,br:r,bl:r}; else r = r||{tl:0,tr:0,br:0,bl:0};
+    this.beginPath();
+    this.moveTo(x+r.tl,y);
+    this.lineTo(x+w-r.tr,y); this.quadraticCurveTo(x+w,y,x+w,y+r.tr);
+    this.lineTo(x+w,y+h-r.br); this.quadraticCurveTo(x+w,y+h,x+w-r.br,y+h);
+    this.lineTo(x+r.bl,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r.bl);
+    this.lineTo(x,y+r.tl); this.quadraticCurveTo(x,y,x+r.tl,y);
+    this.closePath(); return this;
+  };
+}
+
+/* ---------- safe storage (works on Vercel; degrades in sandboxed previews) ---------- */
+var mem = {};
+var store = {
+  get:function(k){ try{ var v=localStorage.getItem(k); return v===null?(k in mem?mem[k]:null):v; }catch(e){ return k in mem?mem[k]:null; } },
+  set:function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
+};
+
+/* ---------- state ---------- */
+var S = {
+  key: store.get('ol_key') || '',
+  model: store.get('ol_model') || 'claude-haiku-4-5-20251001',
+  tts: store.get('ol_tts') || 'on',
+  lang: store.get('ol_lang') || 'en-IN',
+  autoMem: store.get('ol_automem') || 'off',
+  mode: 'companion',
+  tools: { web:false, location:false },
+  snapshot: null,         // {b64, media}
+  doc: null,              // {b64, media, name, isPdf}
+  frames: [],             // video frames [{b64,media}]
+  history: [],            // {role, content:[blocks]} for API
+  memories: JSON.parse(store.get('ol_memories') || '[]'),
+  usage: { req:0, in:0, out:0 }
+};
+
+var MODES = [
+  {id:'companion', label:'◎ Companion'},
+  {id:'teach',     label:'🎓 Teach'},
+  {id:'translate', label:'🌍 Translate'},
+  {id:'trouble',   label:'🔧 Fix it'},
+  {id:'business',  label:'💼 Advisor'},
+  {id:'analyst',   label:'📊 Analyst'},
+  {id:'code',      label:'💻 Code'},
+  {id:'create',    label:'🎨 Create'}
+];
+
+var SYS = {
+  companion:"You are OmniLens, a warm, sharp visual companion. The user points their phone at the world and asks. Identify what's in the image precisely, answer the real question, and keep replies tight and spoken-friendly. Avoid filler.",
+  teach:"You are OmniLens in Teaching mode. Explain whatever the user shows or asks like a patient expert tutor: define terms, give one vivid analogy, then check understanding with a short question. Adapt depth to the learner.",
+  translate:"You are OmniLens in Translation mode. Detect text in the image or the user's speech and translate it into the user's chosen language. Give the translation first, then a one-line note on nuance or context if useful. Be faithful, not literal.",
+  trouble:"You are OmniLens in Troubleshooting mode. The user is showing a device, error, appliance, code, or setup that isn't working. Diagnose from the image, state the most likely cause, then give numbered steps to fix it, safest first. Flag anything dangerous.",
+  business:"You are OmniLens, a pragmatic business advisor for Indian SMEs and the Bharat market. Read what's shown (a shop, product, invoice, menu, competitor) and give specific, actionable advice grounded in Indian market realities — pricing, GST, local channels, low-cost tactics. No fluff.",
+  analyst:"You are OmniLens in Analyst mode. Extract quantitative data from what the user shows or describes. When a chart would help, append a fenced code block labelled json with this exact shape and nothing else inside it: {\"type\":\"bar\"|\"line\",\"title\":\"...\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"values\":[...]}]}. Keep prose insight above the block short.",
+  code:"You are OmniLens in Code mode. Read screens, whiteboards, or described requirements and produce correct, runnable code in fenced blocks with the language tag. Explain briefly above the block. Prefer clarity and note edge cases.",
+  create:"You are OmniLens in Create mode. The user wants an image they cannot render here. Turn their idea (and anything shown) into ONE richly detailed, production-ready image-generation prompt: subject, composition, lighting, style, mood, palette, lens. Output the prompt in a fenced code block, then one line on where to paste it. Be explicit that OmniLens drafts the prompt, not the picture."
+};
+
+/* ---------- elements ---------- */
+function el(id){ return document.getElementById(id); }
+var feed = el('feed'), q = el('q'), toastEl = el('toast');
+
+/* ---------- toast ---------- */
+var toastT;
+function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(function(){toastEl.classList.remove('on');},2400); }
+
+/* ---------- modes ---------- */
+(function(){
+  var c = el('modes');
+  MODES.forEach(function(m){
+    var b=document.createElement('button');
+    b.className='mode'+(m.id===S.mode?' active':'');
+    b.textContent=m.label; b.dataset.id=m.id;
+    b.onclick=function(){ S.mode=m.id; [].forEach.call(c.children,function(x){x.classList.toggle('active',x.dataset.id===m.id);});
+      q.placeholder = m.id==='translate'?'Show or say text to translate…' : m.id==='create'?'Describe the image you want…' : m.id==='code'?'Show a screen or describe the code…' : 'Ask about what you see…';
+      if(m.id==='create') toast('Create mode drafts a prompt — it does not render images. See Settings.');
+    };
+    c.appendChild(b);
+  });
+})();
+
+/* ---------- tools row ---------- */
+function renderTools(){
+  var r = el('toolrow'); r.innerHTML='';
+  var defs = [
+    {id:'web',  label:'🌐 Web search', type:'toggle'},
+    {id:'loc',  label:'📍 Location',   type:'toggle'},
+    {id:'doc',  label:'📄 Document',   type:'action'},
+    {id:'vid',  label:'🎬 Video',      type:'action'}
+  ];
+  defs.forEach(function(d){
+    var c=document.createElement('button'); c.className='chip';
+    if(d.id==='web' && S.tools.web) c.classList.add('on');
+    if(d.id==='loc' && S.tools.location) c.classList.add('on');
+    if(d.id==='doc' && S.doc) c.classList.add('on');
+    if(d.id==='vid' && S.frames.length) c.classList.add('on');
+    var labelTxt = d.label;
+    if(d.id==='doc' && S.doc) labelTxt='📄 '+(S.doc.name.length>14?S.doc.name.slice(0,12)+'…':S.doc.name);
+    if(d.id==='vid' && S.frames.length) labelTxt='🎬 '+S.frames.length+' frames';
+    c.innerHTML='<span>'+labelTxt+'</span>'+((d.id==='doc'&&S.doc)||(d.id==='vid'&&S.frames.length)?'<span class="x">✕</span>':'');
+    c.onclick=function(ev){
+      if(d.id==='web'){ S.tools.web=!S.tools.web; renderTools(); }
+      else if(d.id==='loc'){ toggleLocation(); }
+      else if(d.id==='doc'){ if(S.doc){ S.doc=null; renderTools(); } else el('docInput').click(); }
+      else if(d.id==='vid'){ if(S.frames.length){ S.frames=[]; renderTools(); } else el('vidInput').click(); }
+    };
+    r.appendChild(c);
+  });
+}
+renderTools();
+
+/* ---------- location ---------- */
+var locData=null;
+function toggleLocation(){
+  if(S.tools.location){ S.tools.location=false; locData=null; renderTools(); return; }
+  if(!navigator.geolocation){ toast('Location not available on this device.'); return; }
+  toast('Requesting location…');
+  navigator.geolocation.getCurrentPosition(function(p){
+    locData={lat:p.coords.latitude.toFixed(4), lon:p.coords.longitude.toFixed(4)};
+    S.tools.location=true; renderTools(); toast('Location on.');
+  }, function(){ toast('Location permission denied.'); }, {timeout:8000});
+}
+
+/* ---------- camera ---------- */
+var camStream=null, facing='environment', camOn=false;
+async function startCamera(){
+  try{
+    if(camStream) stopCamera();
+    camStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:facing} }, audio:false });
+    var v=el('cam'); v.srcObject=camStream; v.style.display='block';
+    v.classList.toggle('mirror', facing==='user');
+    el('camoff').style.display='none';
+    el('flipCam').style.display='flex'; el('stopCam').style.display='flex';
+    el('startCam') && (el('startCam').textContent='Enable camera');
+    camOn=true;
+  }catch(e){ toast('Camera blocked. Allow access in your browser, over HTTPS.'); }
+}
+function stopCamera(){
+  if(camStream){ camStream.getTracks().forEach(function(t){t.stop();}); camStream=null; }
+  var v=el('cam'); v.style.display='none'; v.srcObject=null;
+  el('camoff').style.display='flex'; el('flipCam').style.display='none'; el('stopCam').style.display='none';
+  camOn=false;
+}
+el('startCam').onclick=startCamera;
+el('flipCam').onclick=function(){ facing = facing==='environment'?'user':'environment'; startCamera(); };
+el('stopCam').onclick=stopCamera;
+
+/* capture current frame, downscaled for token economy */
+function captureFrame(maxDim){
+  maxDim = maxDim||1024;
+  var v=el('cam'); if(!camOn || !v.videoWidth) return null;
+  var w=v.videoWidth, h=v.videoHeight, sc=Math.min(1, maxDim/Math.max(w,h));
+  var cw=Math.round(w*sc), ch=Math.round(h*sc);
+  var cv=el('work'); cv.width=cw; cv.height=ch;
+  var ctx=cv.getContext('2d');
+  if(facing==='user'){ ctx.translate(cw,0); ctx.scale(-1,1); }
+  ctx.drawImage(v,0,0,cw,ch);
+  var url=cv.toDataURL('image/jpeg',0.7);
+  return { b64:url.split(',')[1], media:'image/jpeg', url:url };
+}
+
+/* tap-to-snapshot: if camera on and user asks, auto-attach a frame */
+function autoSnapshot(){
+  if(!camOn) return null;
+  var f=captureFrame();
+  if(f){ S.snapshot=f; showSnap(f.url); }
+  return f;
+}
+function showSnap(url){ el('snapthumb').src=url; el('snaptag').classList.add('on'); }
+el('clearSnap').onclick=function(){ S.snapshot=null; el('snaptag').classList.remove('on'); };
+
+/* ---------- document upload ---------- */
+el('docInput').onchange=function(e){
+  var f=e.target.files[0]; if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    var b64=rd.result.split(',')[1];
+    var isPdf=f.type==='application/pdf';
+    S.doc={ b64:b64, media:isPdf?'application/pdf':f.type, name:f.name, isPdf:isPdf };
+    renderTools(); toast('Attached: '+f.name);
+  };
+  rd.readAsDataURL(f); e.target.value='';
+};
+
+/* ---------- video frame sampling ---------- */
+el('vidInput').onchange=function(e){
+  var f=e.target.files[0]; if(!f) return;
+  toast('Sampling video frames…');
+  var v=document.createElement('video'); v.muted=true; v.playsInline=true; v.src=URL.createObjectURL(f);
+  v.onloadedmetadata=function(){
+    var dur=v.duration||0, n=Math.min(5, Math.max(2, Math.round(dur/3)||3));
+    var times=[]; for(var i=0;i<n;i++){ times.push(dur*(i+0.5)/n); }
+    var out=[], idx=0;
+    function grab(){
+      if(idx>=times.length){ S.frames=out; renderTools(); toast(out.length+' frames captured.'); URL.revokeObjectURL(v.src); return; }
+      v.currentTime=times[idx];
+    }
+    v.onseeked=function(){
+      var sc=Math.min(1,1024/Math.max(v.videoWidth,v.videoHeight));
+      var cw=Math.round(v.videoWidth*sc), ch=Math.round(v.videoHeight*sc);
+      var cv=el('work'); cv.width=cw; cv.height=ch; cv.getContext('2d').drawImage(v,0,0,cw,ch);
+      out.push({ b64:cv.toDataURL('image/jpeg',0.6).split(',')[1], media:'image/jpeg' });
+      idx++; grab();
+    };
+    grab();
+  };
+  v.onerror=function(){ toast('Could not read that video.'); };
+  e.target.value='';
+};
+
+/* ---------- speech recognition ---------- */
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+var recog=null, recording=false;
+function setupRecog(){
+  if(!SR){ return null; }
+  var r=new SR(); r.continuous=false; r.interimResults=true; r.lang=S.lang;
+  r.onresult=function(ev){
+    var t=''; for(var i=0;i<ev.results.length;i++){ t+=ev.results[i][0].transcript; }
+    q.value=t; autosize();
+  };
+  r.onend=function(){ recording=false; el('micBtn').classList.remove('rec'); if(q.value.trim()) send(); };
+  r.onerror=function(){ recording=false; el('micBtn').classList.remove('rec'); };
+  return r;
+}
+el('micBtn').onclick=function(){
+  if(!SR){ toast('Voice input isn\u2019t supported in this browser — type instead.'); q.focus(); return; }
+  if(recording){ recog && recog.stop(); return; }
+  recog=setupRecog(); if(!recog) return;
+  try{ recog.start(); recording=true; el('micBtn').classList.add('rec'); }catch(e){}
+};
+
+/* ---------- speech synthesis ---------- */
+function speak(text){
+  if(S.tts!=='on' || !window.speechSynthesis) return;
+  try{
+    speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(text.replace(/```[\s\S]*?```/g,' code block ').replace(/[*#`>]/g,''));
+    u.lang=S.lang; u.rate=1.02; u.pitch=1;
+    var vs=speechSynthesis.getVoices(); var m=vs.find(function(v){return v.lang===S.lang;}) || vs.find(function(v){return v.lang.slice(0,2)===S.lang.slice(0,2);});
+    if(m) u.voice=m;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ---------- render helpers ---------- */
+function escapeHtml(s){ return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+function renderMarkdown(text){
+  // split out code fences first
+  var parts = text.split(/```/);
+  var html='';
+  for(var i=0;i<parts.length;i++){
+    if(i%2===1){
+      var blk=parts[i]; var nl=blk.indexOf('\n');
+      var lang = nl>=0 ? blk.slice(0,nl).trim() : '';
+      var code = nl>=0 ? blk.slice(nl+1) : blk;
+      if(lang.toLowerCase()==='json'){ /* may be a chart; still show */ }
+      html += '<pre><span class="copy" data-code="'+encodeURIComponent(code)+'">COPY</span><code>'+escapeHtml(code.replace(/\n$/,''))+'</code></pre>';
+    } else {
+      var t=escapeHtml(parts[i]);
+      t=t.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\n/g,'<br>');
+      html+=t;
+    }
+  }
+  return html;
+}
+
+function addBubble(role, text, opts){
+  opts=opts||{};
+  var b=document.createElement('div'); b.className='bubble '+role;
+  if(role==='sys'){ b.textContent=text; feed.appendChild(b); scrollFeed(); return b; }
+  var who=document.createElement('div'); who.className='who';
+  var name=document.createElement('span'); name.textContent=role==='user'?'You':'OmniLens';
+  who.appendChild(name);
+  if(role==='ai'){
+    var play=document.createElement('span'); play.className='play'; play.textContent='🔊'; play.title='Read aloud';
+    play.onclick=function(){ speak(text); }; who.appendChild(play);
+  }
+  b.appendChild(who);
+  if(opts.img){ var im=document.createElement('img'); im.className='att'; im.src=opts.img; b.appendChild(im); }
+  var body=document.createElement('div');
+  body.innerHTML = role==='ai'? renderMarkdown(text) : escapeHtml(text).replace(/\n/g,'<br>');
+  b.appendChild(body);
+  feed.appendChild(b);
+  // wire copy buttons
+  [].forEach.call(b.querySelectorAll('.copy'),function(cp){
+    cp.onclick=function(){ try{ navigator.clipboard.writeText(decodeURIComponent(cp.dataset.code)); cp.textContent='COPIED'; setTimeout(function(){cp.textContent='COPY';},1200);}catch(e){} };
+  });
+  scrollFeed();
+  return b;
+}
+
+function scrollFeed(){ feed.scrollTop=feed.scrollHeight; }
+feed.addEventListener('click',function(e){ if(e.target===feed) feed.classList.toggle('expanded'); });
+
+/* ---------- chart rendering ---------- */
+function tryRenderChart(text, bubble){
+  var m=text.match(/```json\s*([\s\S]*?)```/i);
+  if(!m) return;
+  var data; try{ data=JSON.parse(m[1].trim()); }catch(e){ return; }
+  if(!data || !data.labels || !data.series) return;
+  var cv=document.createElement('canvas'); cv.className='chart'; cv.width=420; cv.height=240;
+  bubble.appendChild(cv);
+  drawChart(cv, data);
+}
+function drawChart(cv, d){
+  var ctx=cv.getContext('2d'), W=cv.width, H=cv.height, pad=34, bottom=H-26, top=22;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0c0c0f'; ctx.fillRect(0,0,W,H);
+  var all=[]; d.series.forEach(function(s){ all=all.concat(s.values); });
+  var max=Math.max.apply(null, all.concat([1])), min=Math.min(0, Math.min.apply(null, all));
+  function X(i,n){ return pad + (W-pad-16)*(n<=1?0.5:i/(n-1)); }
+  function Y(v){ return bottom - (bottom-top)*((v-min)/((max-min)||1)); }
+  // axis
+  ctx.strokeStyle='rgba(227,196,146,0.18)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad,top); ctx.lineTo(pad,bottom); ctx.lineTo(W-12,bottom); ctx.stroke();
+  ctx.fillStyle='#8a877f'; ctx.font='9px "DM Mono",monospace';
+  if(d.title){ ctx.fillStyle='#E3C492'; ctx.font='11px "Cinzel",serif'; ctx.fillText(d.title, pad, 14); ctx.fillStyle='#8a877f'; ctx.font='9px "DM Mono",monospace'; }
+  var colors=['#E3C492','#9bbf8f','#C9A24B','#d98a6a'];
+  var n=d.labels.length;
+  if(d.type==='line'){
+    d.series.forEach(function(s,si){
+      ctx.strokeStyle=colors[si%colors.length]; ctx.lineWidth=2; ctx.beginPath();
+      s.values.forEach(function(v,i){ var x=X(i,n),y=Y(v); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+      ctx.stroke();
+      ctx.fillStyle=colors[si%colors.length];
+      s.values.forEach(function(v,i){ ctx.beginPath(); ctx.arc(X(i,n),Y(v),2.5,0,7); ctx.fill(); });
+    });
+  } else {
+    var groups=d.series.length, bw=(W-pad-24)/n*0.62, gap=bw/Math.max(1,groups);
+    d.labels.forEach(function(lb,i){
+      var cx=X(i,n);
+      d.series.forEach(function(s,si){
+        ctx.fillStyle=colors[si%colors.length];
+        var bx=cx - bw/2 + si*gap, by=Y(s.values[i]||0);
+        ctx.fillRect(bx, by, gap*0.86, bottom-by);
+      });
+    });
+  }
+  ctx.fillStyle='#8a877f'; ctx.font='9px "DM Mono",monospace'; ctx.textAlign='center';
+  d.labels.forEach(function(lb,i){ var s=String(lb); if(s.length>7)s=s.slice(0,6)+'…'; ctx.fillText(s, X(i,n), H-10); });
+  ctx.textAlign='left';
+}
+
+/* ---------- build API message + send ---------- */
+function buildSystem(){
+  var sys = SYS[S.mode] + '\n\nUser interface language preference: '+S.lang+'. Keep answers concise and natural for speech unless code or data is requested.';
+  if(S.memories.length){ sys += '\n\nWhat you remember about this user:\n- ' + S.memories.join('\n- '); }
+  if(S.tools.location && locData){ sys += '\n\nUser approximate location: lat '+locData.lat+', lon '+locData.lon+'.'; }
+  var now=new Date();
+  sys += '\n\nCurrent time: '+now.toString()+'.';
+  return sys;
+}
+
+function buildContent(userText){
+  var content=[];
+  if(S.snapshot){ content.push({type:'image',source:{type:'base64',media_type:S.snapshot.media,data:S.snapshot.b64}}); }
+  S.frames.forEach(function(fr){ content.push({type:'image',source:{type:'base64',media_type:fr.media,data:fr.b64}}); });
+  if(S.doc){
+    if(S.doc.isPdf){ content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:S.doc.b64}}); }
+    else { content.push({type:'image',source:{type:'base64',media_type:S.doc.media,data:S.doc.b64}}); }
+  }
+  content.push({type:'text', text:userText});
+  return content;
+}
+
+var busy=false;
+async function send(){
+  var text=q.value.trim();
+  if(!text && !S.snapshot && !camOn){ return; }
+  if(busy) return;
+
+  // auto-attach a live frame if camera is on and nothing explicitly attached
+  if(camOn && !S.snapshot && !S.frames.length){ autoSnapshot(); }
+
+  if(!S.key){ openSheet('setSheet'); toast('Add your Anthropic API key to ask. Camera & voice are free.'); return; }
+
+  var shownImg = S.snapshot? S.snapshot.url : null;
+  addBubble('user', text||'(what is this?)', {img:shownImg});
+  q.value=''; autosize();
+
+  var content=buildContent(text||'What is this? Describe and explain.');
+  S.history.push({role:'user', content:content});
+
+  // typing indicator
+  var t=document.createElement('div'); t.className='bubble ai';
+  t.innerHTML='<div class="who"><span>OmniLens</span></div><div class="typing"><i></i><i></i><i></i></div>';
+  feed.appendChild(t); scrollFeed();
+  busy=true; el('sendBtn').disabled=true;
+
+  try{
+    var body={ model:S.model, max_tokens:1024, system:buildSystem(), messages:S.history };
+    if(S.tools.web){ body.tools=[{type:'web_search_20250305', name:'web_search', max_uses:3}]; }
+    var res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        'x-api-key':S.key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify(body)
+    });
+    var data=await res.json();
+    t.remove();
+    if(data.error){ addBubble('sys','⚠ '+(data.error.message||'API error')); busy=false; el('sendBtn').disabled=false; return; }
+
+    var txt = (data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n').trim();
+    // collect web sources if present
+    var sources=[];
+    (data.content||[]).forEach(function(b){
+      if(b.type==='web_search_tool_result' && Array.isArray(b.content)){
+        b.content.forEach(function(r){ if(r.url) sources.push({url:r.url,title:r.title||r.url}); });
+      }
+    });
+    if(!txt) txt='(No text returned.)';
+
+    var bub=addBubble('ai', txt);
+    if(S.mode==='analyst') tryRenderChart(txt, bub);
+    if(sources.length){
+      var sd=document.createElement('div'); sd.style.marginTop='8px';
+      sources.slice(0,5).forEach(function(s){ var a=document.createElement('a'); a.className='src'; a.href=s.url; a.target='_blank'; a.rel='noopener'; a.textContent='↗ '+(s.title.length>30?s.title.slice(0,28)+'…':s.title); sd.appendChild(a); });
+      bub.appendChild(sd);
+    }
+
+    S.history.push({role:'assistant', content:[{type:'text',text:txt}]});
+    speak(txt);
+
+    // usage
+    if(data.usage){ S.usage.req++; S.usage.in+=data.usage.input_tokens||0; S.usage.out+=data.usage.output_tokens||0; updateUsage(); }
+
+    // auto-memory (optional, one cheap follow-up)
+    if(S.autoMem==='on' && text){ maybeExtractMemory(text, txt); }
+
+    // clear per-turn attachments (keep camera live)
+    S.snapshot=null; el('snaptag').classList.remove('on'); S.frames=[]; renderTools();
+
+  }catch(e){
+    t.remove();
+    addBubble('sys','⚠ Network error — check your connection and key.');
+  }
+  busy=false; el('sendBtn').disabled=false;
+}
+el('sendBtn').onclick=send;
+q.addEventListener('keydown',function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+
+function autosize(){ q.style.height='auto'; q.style.height=Math.min(120,q.scrollHeight)+'px'; }
+q.addEventListener('input', autosize);
+
+/* ---------- optional auto-memory extraction ---------- */
+async function maybeExtractMemory(userText, aiText){
+  try{
+    var res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'content-type':'application/json','x-api-key':S.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:80,system:'Extract at most one durable, useful fact about the user from this exchange (a stable preference, name, role, goal). If none, reply NONE. Reply with only the fact, under 12 words.',messages:[{role:'user',content:'User said: '+userText+'\nAssistant said: '+aiText}]})
+    });
+    var d=await res.json();
+    var fact=((d.content||[]).find(function(b){return b.type==='text';})||{}).text||'';
+    fact=fact.trim();
+    if(fact && fact.toUpperCase()!=='NONE' && fact.length<80 && S.memories.indexOf(fact)<0){
+      S.memories.push(fact); saveMemories(); toast('Remembered: '+fact);
+    }
+  }catch(e){}
+}
+
+/* ---------- memory UI ---------- */
+function saveMemories(){ store.set('ol_memories', JSON.stringify(S.memories)); renderMemList(); }
+function renderMemList(){
+  var c=el('memList'); c.innerHTML='';
+  if(!S.memories.length){ c.innerHTML='<div class="hint" style="margin-top:14px;">Nothing remembered yet.</div>'; return; }
+  S.memories.forEach(function(m,i){
+    var d=document.createElement('div'); d.className='memitem';
+    d.innerHTML='<span>'+escapeHtml(m)+'</span><span class="del" data-i="'+i+'">✕</span>';
+    d.querySelector('.del').onclick=function(){ S.memories.splice(i,1); saveMemories(); };
+    c.appendChild(d);
+  });
+}
+el('addMem').onclick=function(){ var v=el('memInput').value.trim(); if(!v) return; S.memories.push(v); el('memInput').value=''; saveMemories(); toast('Saved.'); };
+
+/* ---------- usage ---------- */
+var PRICE={ 'claude-haiku-4-5-20251001':{i:1,o:5}, 'claude-sonnet-4-6':{i:3,o:15}, 'claude-opus-4-8':{i:15,o:75} };
+function updateUsage(){
+  el('sReq').textContent=S.usage.req;
+  el('sIn').textContent=S.usage.in.toLocaleString();
+  el('sOut').textContent=S.usage.out.toLocaleString();
+  var p=PRICE[S.model]||PRICE['claude-haiku-4-5-20251001'];
+  var cost=(S.usage.in/1e6)*p.i + (S.usage.out/1e6)*p.o;
+  el('sCost').textContent='$'+cost.toFixed(4);
+}
+
+/* ---------- sheets ---------- */
+function openSheet(id){ el('scrim').classList.add('on'); el(id).classList.add('on'); if(id==='memSheet') renderMemList(); }
+function closeSheets(){ el('scrim').classList.remove('on'); el('setSheet').classList.remove('on'); el('memSheet').classList.remove('on'); }
+el('setBtn').onclick=function(){ openSheet('setSheet'); };
+el('memBtn').onclick=function(){ openSheet('memSheet'); };
+el('scrim').onclick=closeSheets;
+[].forEach.call(document.querySelectorAll('[data-close]'),function(b){ b.onclick=closeSheets; });
+
+/* settings load + save */
+el('apiKey').value=S.key; el('model').value=S.model; el('ttsMode').value=S.tts; el('lang').value=S.lang; el('autoMem').value=S.autoMem;
+el('saveSet').onclick=function(){
+  S.key=el('apiKey').value.trim(); S.model=el('model').value; S.tts=el('ttsMode').value; S.lang=el('lang').value; S.autoMem=el('autoMem').value;
+  store.set('ol_key',S.key); store.set('ol_model',S.model); store.set('ol_tts',S.tts); store.set('ol_lang',S.lang); store.set('ol_automem',S.autoMem);
+  updateUsage(); closeSheets(); toast('Settings saved.');
+};
+el('clearChat').onclick=function(){ S.history=[]; feed.innerHTML=''; greet(); closeSheets(); toast('Conversation cleared.'); };
+updateUsage();
+
+/* ---------- greeting ---------- */
+function greet(){
+  addBubble('sys','Point the lens at anything and ask. Pick a mode above. Voice and camera are free — answers use your Claude key.');
+}
+greet();
+
+/* ---------- PWA: manifest + service worker + icon (canvas) ---------- */
+function makeIcon(size){
+  var c=document.createElement('canvas'); c.width=c.height=size; var x=c.getContext('2d');
+  var g=x.createLinearGradient(0,0,size,size); g.addColorStop(0,'#E3C492'); g.addColorStop(1,'#C9A24B');
+  x.fillStyle='#0a0a0c'; x.fillRect(0,0,size,size);
+  x.fillStyle=g; x.beginPath(); x.arc(size/2,size/2,size*0.30,0,7); x.fill();
+  x.fillStyle='#0a0a0c'; x.beginPath(); x.arc(size/2,size/2,size*0.13,0,7); x.fill();
+  x.strokeStyle=g; x.lineWidth=size*0.03; x.beginPath(); x.arc(size/2,size/2,size*0.18,0,7); x.stroke();
+  return c.toDataURL('image/png');
+}
+(function setupPWA(){
+  try{
+    var icon=makeIcon(192), icon512=makeIcon(512);
+    var link=document.createElement('link'); link.rel='apple-touch-icon'; link.href=icon; document.head.appendChild(link);
+    var manifest={ name:'OmniLens AI', short_name:'OmniLens', start_url:'.', display:'standalone',
+      background_color:'#0a0a0c', theme_color:'#0a0a0c',
+      icons:[{src:icon,sizes:'192x192',type:'image/png'},{src:icon512,sizes:'512x512',type:'image/png'}] };
+    var mb=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+    var ml=document.createElement('link'); ml.rel='manifest'; ml.href=URL.createObjectURL(mb); document.head.appendChild(ml);
+    if('serviceWorker' in navigator){
+      var sw="self.addEventListener('install',function(e){self.skipWaiting();});self.addEventListener('fetch',function(){});";
+      var sb=new Blob([sw],{type:'text/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(sb)).catch(function(){});
+    }
+  }catch(e){}
+})();
+
+var deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferredPrompt=e; });
+el('installBtn').onclick=function(){
+  if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt=null; }
+  else{ toast('On iPhone: Share → Add to Home Screen.'); }
+};
+
+/* warm up voices */
+if(window.speechSynthesis){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=function(){ speechSynthesis.getVoices(); }; }
+</script>
+</body>
+</html>
